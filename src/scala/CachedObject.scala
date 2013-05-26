@@ -47,11 +47,12 @@ class CachedObject[T](key: AnyRef, f: => T) extends (() => T) {
   def load() {
     synchronized {
       if (reloadNeeded) {
-        try {
+        value = try {
           val thisThreadStartUpdateHere = CachedObject.trySetThreadLoading(key)
-          value = Some(f)
+          val temp = Some(f)
           reloadNeeded = false
           if (thisThreadStartUpdateHere) CachedObject.unsetThreadLoading(key)
+          temp
         }
         finally {
           loading.set(false)
@@ -148,7 +149,7 @@ object CachedObjectTest {
       def run() {
         println("Thread: " + Thread.currentThread() + " value: " + cachedObject2())
       }
-    }, 0, 870, TimeUnit.MILLISECONDS)
+    }, 10, 870, TimeUnit.MILLISECONDS)
 
     Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new Runnable {
       def run() {
